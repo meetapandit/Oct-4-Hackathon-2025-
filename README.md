@@ -1,4 +1,4 @@
-# Image Description Generator
+# Augmentative and Alternative Communication-ZQ (AAC ZQ)
 
 A FastAPI web application that generates detailed descriptions of images using Claude's vision capabilities.
 
