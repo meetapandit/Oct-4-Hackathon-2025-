@@ -331,9 +331,9 @@ def compute_term_vectors(terms: List[str], openai_client: OpenAI) -> Dict[str, n
 
 
 def compute_signals(terms: List[str], term_vectors: Dict[str, np.ndarray],
-                   ctx_vec: np.ndarray, openai_client: OpenAI) -> Dict[str, Dict]:
+                   ctx_vec: np.ndarray, openai_client: OpenAI, context: str) -> Dict[str, Dict]:
     """
-    Compute relevance signals for each term.
+    Compute relevance signals for each term using semantic and direct matching.
     """
     # Compute prototype vectors
     action_vecs = embed_batch(CONFIG["seeds"]["action"][:5], openai_client)
@@ -342,6 +342,10 @@ def compute_signals(terms: List[str], term_vectors: Dict[str, np.ndarray],
     proto_action = np.mean(action_vecs, axis=0)
     proto_decor = np.mean(decor_vecs, axis=0)
 
+    # Extract words from context for direct matching
+    context_lower = context.lower()
+    context_words = set(context_lower.split())
+
     signals = {}
 
     for term in terms:
@@ -349,9 +353,21 @@ def compute_signals(terms: List[str], term_vectors: Dict[str, np.ndarray],
             continue
 
         v = term_vectors[term]
+        term_lower = term.lower()
 
-        # Similarity to context
+        # Semantic similarity to context (using OpenAI embeddings)
         sim_topic = cosine_similarity([v], [ctx_vec])[0][0]
+
+        # Direct match bonus - check if term appears in context
+        direct_match = 0.0
+        if term_lower in context_lower:
+            direct_match = 1.0  # Exact match in context
+        else:
+            # Partial match - check if any word in term appears in context
+            term_words = set(term_lower.split())
+            overlap = len(term_words.intersection(context_words))
+            if overlap > 0:
+                direct_match = 0.5 * (overlap / len(term_words))
 
         # Action margin
         sim_action = cosine_similarity([v], [proto_action])[0][0]
@@ -360,6 +376,7 @@ def compute_signals(terms: List[str], term_vectors: Dict[str, np.ndarray],
 
         signals[term] = {
             "sim_topic": float(sim_topic),
+            "direct_match": float(direct_match),
             "action_margin": float(action_margin),
         }
 
@@ -368,26 +385,32 @@ def compute_signals(terms: List[str], term_vectors: Dict[str, np.ndarray],
 
 def score_terms(signals: Dict[str, Dict]) -> Dict[str, float]:
     """
-    Compute final scores from signals.
+    Compute final scores from signals with emphasis on semantic + direct matching.
     """
     scores = {}
 
     # Normalize signals
     all_sim_topic = [s["sim_topic"] for s in signals.values()]
+    all_direct_match = [s["direct_match"] for s in signals.values()]
     all_action_margin = [s["action_margin"] for s in signals.values()]
 
     min_sim = min(all_sim_topic) if all_sim_topic else 0
     max_sim = max(all_sim_topic) if all_sim_topic else 1
+    max_direct = max(all_direct_match) if all_direct_match else 1
     min_action = min(all_action_margin) if all_action_margin else 0
     max_action = max(all_action_margin) if all_action_margin else 1
 
     for term, sig in signals.items():
         # Normalize
         norm_sim = (sig["sim_topic"] - min_sim) / (max_sim - min_sim + 1e-6)
+        norm_direct = sig["direct_match"] / (max_direct + 1e-6)
         norm_action = (sig["action_margin"] - min_action) / (max_action - min_action + 1e-6)
 
-        # Combined score
-        score = 0.7 * norm_sim + 0.3 * norm_action
+        # Combined score with weights:
+        # - 50% semantic similarity (OpenAI embedding match)
+        # - 30% direct match (word appears in context)
+        # - 20% action margin (general relevance)
+        score = 0.5 * norm_sim + 0.3 * norm_direct + 0.2 * norm_action
         scores[term] = float(score)
 
     return scores
@@ -519,12 +542,19 @@ def generate_terms(context: str, n: int = 100,
     term_vectors = compute_term_vectors(candidates, openai_client)
 
     # 5. Compute signals
-    print("5. Computing relevance signals...")
-    signals = compute_signals(candidates, term_vectors, ctx_vec, openai_client)
+    print("5. Computing relevance signals with semantic + direct matching...")
+    signals = compute_signals(candidates, term_vectors, ctx_vec, openai_client, context)
 
     # 6. Score terms
-    print("6. Scoring terms...")
+    print("6. Scoring terms with OpenAI semantic + direct matching...")
     scores = score_terms(signals)
+
+    # Log top scoring terms with their match types
+    top_terms = sorted(scores.items(), key=lambda x: x[1], reverse=True)[:10]
+    print("\nTop 10 ranked terms:")
+    for term, score in top_terms:
+        sig = signals[term]
+        print(f"  • {term:30s} | Score: {score:.3f} | Semantic: {sig['sim_topic']:.3f} | Direct: {sig['direct_match']:.3f}")
 
     # 7. Categorize
     print("7. Categorizing terms...")
