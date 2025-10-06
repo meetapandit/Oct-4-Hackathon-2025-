@@ -84,19 +84,19 @@ def generate():
         if not context:
             return jsonify({'error': 'Context is required'}), 400
 
-        # Generate terms using the rank_terms module
+        # Generate terms using the rank_terms module (top 50-75 words)
         result = generate_terms(
             context,
-            n=100,
+            n=75,  # Generate top 75 words
             anthropic_client=anthropic_client,
             openai_client=openai_client
         )
 
-        # Extract just the terms
-        terms = [item['term'] for item in result['terms']]
+        # Extract just the top 50-75 terms (already ranked by score)
+        terms = [item['term'] for item in result['terms'][:75]]
 
         # Add emojis with a single API call
-        print("Adding emojis to terms...")
+        print(f"Adding emojis to top {len(terms)} terms...")
         emoji_terms = add_emojis_to_terms(terms, anthropic_client)
 
         return jsonify({
@@ -148,12 +148,114 @@ Return ONLY the sentences, one per line. No numbering, no extra text."""
         response_text = message.content[0].text.strip()
         sentences = [s.strip() for s in response_text.split('\n') if s.strip()]
 
+        # Rank sentences using OpenAI embeddings for semantic similarity
+        print(f"Ranking {len(sentences)} sentences by semantic similarity...")
+        ranked_sentences = rank_sentences_by_similarity(sentences, clean_words, openai_client)
+
+        # Return only top 5 sentences
+        top_sentences = ranked_sentences[:5]
+        print(f"Selected top {len(top_sentences)} sentences")
+
         return jsonify({
             'success': True,
-            'sentences': sentences
+            'sentences': top_sentences
         })
 
     except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+def rank_sentences_by_similarity(sentences, words, openai_client):
+    """
+    Rank sentences by semantic similarity to the selected words using OpenAI embeddings.
+    """
+    import numpy as np
+    from sklearn.metrics.pairwise import cosine_similarity
+
+    # Create a reference phrase from the selected words
+    reference_phrase = " ".join(words)
+
+    # Embed the reference phrase
+    try:
+        ref_response = openai_client.embeddings.create(
+            model="text-embedding-3-small",
+            input=reference_phrase,
+            encoding_format="float"
+        )
+        ref_embedding = np.array(ref_response.data[0].embedding)
+
+        # Embed all sentences
+        sent_response = openai_client.embeddings.create(
+            model="text-embedding-3-small",
+            input=sentences,
+            encoding_format="float"
+        )
+        sent_embeddings = [np.array(item.embedding) for item in sent_response.data]
+
+        # Calculate similarity scores
+        scores = []
+        for i, sent_emb in enumerate(sent_embeddings):
+            similarity = cosine_similarity([ref_embedding], [sent_emb])[0][0]
+
+            # Add direct word match bonus
+            sentence_lower = sentences[i].lower()
+            word_match_count = sum(1 for word in words if word.lower() in sentence_lower)
+            word_match_ratio = word_match_count / len(words) if len(words) > 0 else 0
+
+            # Combined score: 70% semantic + 30% direct match
+            combined_score = 0.7 * similarity + 0.3 * word_match_ratio
+            scores.append((sentences[i], combined_score, similarity, word_match_ratio))
+
+        # Sort by combined score
+        scores.sort(key=lambda x: x[1], reverse=True)
+
+        # Log ranking
+        print("\nTop 5 ranked sentences:")
+        for i, (sent, combined, semantic, direct) in enumerate(scores[:5], 1):
+            print(f"  {i}. [Score:{combined:.3f}] (sem:{semantic:.3f}, dir:{direct:.3f})")
+            print(f"     {sent}")
+
+        return [item[0] for item in scores]
+
+    except Exception as e:
+        print(f"Error ranking sentences: {e}")
+        # Fallback: return original order
+        return sentences
+
+@app.route('/text-to-speech', methods=['POST'])
+def text_to_speech():
+    """
+    Convert text to speech using OpenAI TTS API.
+    Returns audio file.
+    """
+    try:
+        data = request.json
+        text = data.get('text', '')
+
+        if not text:
+            return jsonify({'error': 'Text is required'}), 400
+
+        # Use OpenAI TTS
+        response = openai_client.audio.speech.create(
+            model="tts-1",  # or "tts-1-hd" for higher quality
+            voice="alloy",  # options: alloy, echo, fable, onyx, nova, shimmer
+            input=text
+        )
+
+        # Return audio as base64
+        audio_content = response.content
+        audio_base64 = base64.b64encode(audio_content).decode('utf-8')
+
+        return jsonify({
+            'success': True,
+            'audio': audio_base64,
+            'format': 'mp3'
+        })
+
+    except Exception as e:
+        print(f"TTS Error: {e}")
         return jsonify({
             'success': False,
             'error': str(e)
