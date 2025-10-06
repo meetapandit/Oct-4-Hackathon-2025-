@@ -3,25 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AAC Communication Builder</title>
+    <title>AAC Communication Tool</title>
     <style>
-        :root {
-            --primary: #5465ff;
-            --primary-hover: #3f53ec;
-            --surface: rgba(255, 255, 255, 0.98);
-            --surface-muted: #f2f4ff;
-            --surface-strong: #ffffff;
-            --border: rgba(84, 101, 255, 0.18);
-            --border-strong: rgba(84, 101, 255, 0.32);
-            --text-strong: #0f172a;
-            --text-muted: #636f88;
-            --shadow-lg: 0 28px 60px rgba(15, 23, 42, 0.08);
-            --shadow-sm: 0 12px 30px rgba(84, 101, 255, 0.12);
-            --radius-lg: 28px;
-            --radius-md: 20px;
-            --radius-sm: 12px;
-        }
-
         * {
             margin: 0;
             padding: 0;
@@ -29,569 +12,214 @@
         }
 
         body {
-            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Arial, sans-serif;
-            background: linear-gradient(180deg, #e8efff 0%, #f9fbff 100%);
-            color: var(--text-strong);
-            height: 100vh;
-            margin: 0;
-            display: flex;
-            justify-content: center;
-            align-items: stretch;
-            padding: 16px;
-            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
         }
 
-        h1, h2, h3 {
-            font-weight: 700;
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
         }
 
-        button {
-            font: inherit;
-        }
-
-        .app-shell {
-            max-width: 1280px;
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            height: 100%;
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
         }
 
         .container {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-lg);
-            padding: 18px;
-            display: flex;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
             gap: 20px;
-            align-items: stretch;
-            min-height: 0;
-            height: 100%;
-            box-shadow: var(--shadow-lg);
+            max-width: 1800px;
+            margin: 0 auto;
         }
 
-        /* Sidebar - Word Bank */
-        .sidebar {
-            flex: 0 0 320px;
-            background: var(--surface-muted);
+        .column {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
             display: flex;
             flex-direction: column;
-            gap: 14px;
-            border-radius: var(--radius-md);
-            padding: 18px;
-            border: 1px solid var(--border);
-            box-shadow: var(--shadow-sm);
-            transition: flex-basis 0.3s ease;
-            height: 100%;
-            min-height: 0;
-            overflow: hidden;
+            min-height: 600px;
         }
 
-        .sidebar.focused {
-            flex-basis: min(520px, 55%);
+        .column h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
         }
 
-        .sidebar-header {
-            display: flex;
-            flex-direction: column;
-            gap: 18px;
-            flex-shrink: 0;
-        }
-
-        .logo {
-            font-size: 20px;
-            font-weight: 700;
-            color: var(--text-strong);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .focus-btn {
-            width: 40px;
-            height: 40px;
-            background: var(--surface-strong);
-            border: 1px solid var(--border-strong);
-            border-radius: 12px;
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            background: #f8f9ff;
             cursor: pointer;
-            font-size: 18px;
-            font-weight: 700;
-            color: var(--primary);
-            box-shadow: var(--shadow-sm);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 0;
-            transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+            transition: all 0.3s ease;
+            margin-bottom: 15px;
         }
 
-        .focus-btn:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 14px 25px rgba(84, 101, 255, 0.22);
+        .upload-area:hover {
+            background: #f0f2ff;
+            border-color: #764ba2;
         }
 
-        .focus-btn.active {
-            background: var(--primary);
-            color: white;
-            border-color: transparent;
+        .upload-area.dragover {
+            background: #e8ebff;
+            border-color: #764ba2;
         }
 
-        .input-container {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .search-box {
-            padding-top: 10px;
-            border-top: 1px dashed rgba(84, 101, 255, 0.16);
-            flex-shrink: 0;
-        }
-
-        .search-box input[type="text"] {
-            margin-top: 10px;
-        }
-
-        input[type="text"] {
-            width: 100%;
-            padding: 12px 16px;
-            border-radius: var(--radius-sm);
-            border: 1px solid var(--border);
-            background: var(--surface-strong);
-            font-size: 15px;
-            outline: none;
-            transition: border 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
-            color: var(--text-strong);
-        }
-
-        input[type="text"]::placeholder {
-            color: #9ba5c0;
-        }
-
-        input[type="text"]:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 4px rgba(84, 101, 255, 0.18);
-            background: #ffffff;
+        #fileInput {
+            display: none;
         }
 
         .btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            padding: 12px 18px;
-            border-radius: var(--radius-sm);
-            font-size: 15px;
-            font-weight: 600;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 1em;
             cursor: pointer;
-            border: 1px solid transparent;
-            transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+            transition: all 0.3s;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
         }
 
         .btn:disabled {
             opacity: 0.6;
             cursor: not-allowed;
             transform: none;
-            box-shadow: none;
         }
 
-        .btn-primary {
-            background: var(--primary);
-            color: #ffffff;
-            box-shadow: var(--shadow-sm);
-        }
-
-        .btn-primary:hover:not(:disabled) {
-            background: var(--primary-hover);
-            transform: translateY(-2px);
-            box-shadow: 0 18px 32px rgba(84, 101, 255, 0.28);
-        }
-
-        .word-bank {
-            flex: 1;
-            overflow-y: auto;
-            overflow-x: hidden;
-            padding-right: 4px;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            min-height: 0;
-        }
-
-        .word-bank::-webkit-scrollbar,
-        .sentences-list::-webkit-scrollbar {
-            width: 10px;
-        }
-
-        .word-bank::-webkit-scrollbar-thumb,
-        .sentences-list::-webkit-scrollbar-thumb {
-            background: rgba(84, 101, 255, 0.2);
-            border-radius: 20px;
-        }
-
-        .word-bank::-webkit-scrollbar-track,
-        .sentences-list::-webkit-scrollbar-track {
-            background: transparent;
-        }
-
-        .category {
-            background: var(--surface-strong);
-            border-radius: var(--radius-sm);
-            border: 1px solid transparent;
-            transition: border 0.2s ease, box-shadow 0.2s ease;
-        }
-
-        .category:hover {
-            border-color: var(--border);
-            box-shadow: 0 16px 30px rgba(84, 101, 255, 0.12);
-        }
-
-        .category-header {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 10px 12px;
-            color: var(--text-strong);
-            border-radius: var(--radius-sm);
-            cursor: pointer;
-            user-select: none;
-            font-size: 15px;
-            font-weight: 600;
-            transition: background 0.2s ease, color 0.2s ease;
-        }
-
-        .category-header:hover {
-            background: rgba(84, 101, 255, 0.08);
-        }
-
-        .category-header.expanded {
-            background: rgba(84, 101, 255, 0.12);
-            color: var(--primary);
-        }
-
-        .category-icon {
-            font-size: 18px;
-            flex-shrink: 0;
-            width: 24px;
-            text-align: center;
-        }
-
-        .category-name {
-            flex: 1;
-        }
-
-        .category-arrow {
-            transition: transform 0.2s ease;
-            font-size: 11px;
-            color: var(--text-muted);
-            flex-shrink: 0;
-        }
-
-        .category-arrow.expanded {
-            transform: rotate(90deg);
-        }
-
-        .category-content {
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.35s ease;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-            padding: 0 10px;
-        }
-
-        .category-content.expanded {
-            max-height: 3000px;
-            padding: 10px;
-        }
-
-        .bank-term {
-            background: var(--surface-muted);
-            padding: 9px 12px;
-            border-radius: var(--radius-sm);
-            cursor: pointer;
-            border: 1px solid transparent;
-            user-select: none;
-            font-size: 15px;
-            font-weight: 500;
-            transition: transform 0.2s ease, box-shadow 0.2s ease, border 0.2s ease, background 0.2s ease;
-            white-space: nowrap;
-            box-shadow: 0 8px 18px rgba(84, 101, 255, 0.12);
-        }
-
-        .bank-term:hover {
-            background: rgba(84, 101, 255, 0.15);
-            border-color: rgba(84, 101, 255, 0.35);
-            transform: translateY(-2px);
-            box-shadow: 0 16px 30px rgba(84, 101, 255, 0.18);
-        }
-
-        .bank-term:active {
-            cursor: grabbing;
-            transform: scale(0.98);
-        }
-
-        .term-count {
-            margin-top: auto;
-            padding-top: 16px;
-            border-top: 1px dashed rgba(84, 101, 255, 0.2);
-            font-size: 13px;
-            color: var(--text-muted);
-            text-align: center;
-            flex-shrink: 0;
-        }
-
-        /* Main Canvas Area */
-        .canvas-area {
-            flex: 1;
-            display: flex;
-            gap: 18px;
-            align-items: stretch;
-            min-height: 0;
-        }
-
-        .workspace-column {
-            flex: 1;
-            background: var(--surface-muted);
-            border-radius: var(--radius-md);
-            padding: 18px 18px 22px;
-            border: 1px solid var(--border);
-            box-shadow: var(--shadow-sm);
-            display: flex;
-            flex-direction: column;
-            gap: 18px;
-            position: relative;
-            min-height: 0;
-            overflow: hidden;
-        }
-
-        .workspace-heading {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .workspace-heading h2 {
-            font-size: 20px;
-            letter-spacing: -0.01em;
-        }
-
-        .workspace {
-            flex: 1;
-            min-height: 0;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
-            align-content: flex-start;
-            padding: 20px;
-            background: var(--surface-strong);
-            border-radius: var(--radius-md);
-            border: 2px dashed rgba(84, 101, 255, 0.18);
-            position: relative;
-            overflow: hidden;
-            box-shadow: inset 0 1px 4px rgba(84, 101, 255, 0.08);
-        }
-
-        .workspace.dragover {
-            background: rgba(84, 101, 255, 0.08);
-            border-color: rgba(84, 101, 255, 0.38);
-            box-shadow: inset 0 0 0 3px rgba(84, 101, 255, 0.18);
-        }
-
-        .canvas-term {
-            position: relative;
-            background: #eef0ff;
-            padding: 10px 16px;
-            border-radius: 18px;
-            box-shadow: 0 12px 20px rgba(84, 101, 255, 0.18);
-            cursor: grab;
-            user-select: none;
-            font-size: 16px;
-            font-weight: 600;
-            transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
-            border: 1px solid rgba(84, 101, 255, 0.35);
-            flex-shrink: 0;
-            color: #363dcc;
-        }
-
-        .canvas-term:hover {
-            transform: translateY(-2px);
-            background: #dde1ff;
-            box-shadow: 0 18px 28px rgba(84, 101, 255, 0.24);
-        }
-
-        .canvas-term:active {
-            cursor: grabbing;
-            transform: scale(0.98);
-        }
-
-        .canvas-term.dragging {
-            opacity: 0.55;
-        }
-
-        .canvas-term .remove-btn {
-            position: absolute;
-            top: -8px;
-            right: -8px;
-            width: 20px;
-            height: 20px;
-            background: #ff5d72;
-            border: 2px solid white;
-            border-radius: 50%;
-            color: white;
-            font-size: 12px;
-            cursor: pointer;
+        #preview {
             display: none;
-            align-items: center;
-            justify-content: center;
-            line-height: 1;
-            box-shadow: 0 10px 18px rgba(255, 93, 114, 0.3);
+            margin-top: 15px;
         }
 
-        .canvas-term:hover .remove-btn {
-            display: flex;
+        #previewImage {
+            max-width: 100%;
+            max-height: 250px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
         }
 
-        .insertion-marker {
-            width: 3px;
-            min-height: 50px;
-            background: var(--primary);
-            border-radius: 3px;
-            flex-shrink: 0;
-            opacity: 0.7;
+        .words-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+            flex-grow: 1;
+            overflow-y: auto;
+            max-height: 500px;
         }
 
-        .empty-state {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
+        .word-btn {
+            background: #f0f2ff;
+            border: 2px solid #667eea;
+            color: #333;
+            padding: 15px 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.95em;
+            font-weight: 500;
             text-align: center;
-            color: var(--text-muted);
-            font-size: 16px;
-            pointer-events: none;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            align-items: center;
         }
 
-        .empty-state-icon {
-            font-size: 42px;
+        .word-btn:hover {
+            background: #e8ebff;
+            transform: scale(1.05);
         }
 
-        /* Sentences Panel */
-        .sentences-panel {
-            flex: 0 0 320px;
-            background: var(--surface-muted);
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-            border-radius: var(--radius-md);
-            padding: 18px;
-            border: 1px solid var(--border);
-            box-shadow: var(--shadow-sm);
-            transition: flex-basis 0.3s ease;
-            height: 100%;
-            min-height: 0;
-            overflow: hidden;
+        .word-btn.selected {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: #764ba2;
         }
 
-        .sentences-panel.focused {
-            flex-basis: min(520px, 55%);
+        .selected-words {
+            margin-top: 15px;
+            padding: 15px;
+            background: #fff8f0;
+            border-radius: 8px;
+            min-height: 60px;
         }
 
-        .sentences-header-box {
-            display: flex;
-            flex-direction: column;
-            gap: 14px;
-            flex-shrink: 0;
+        .selected-words h3 {
+            font-size: 1em;
+            color: #764ba2;
+            margin-bottom: 10px;
         }
 
-        .sentences-header {
-            font-size: 20px;
-            font-weight: 700;
-            color: var(--text-strong);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
+        .selected-word-tag {
+            display: inline-block;
+            background: #764ba2;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            margin: 5px;
+            font-size: 0.9em;
+            cursor: pointer;
+        }
+
+        .selected-word-tag:hover {
+            background: #5a3780;
         }
 
         .sentences-list {
-            flex: 1;
+            margin-top: 15px;
+            flex-grow: 1;
             overflow-y: auto;
-            overflow-x: hidden;
-            padding-right: 4px;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            min-height: 0;
         }
 
         .sentence-item {
-            padding: 12px 16px;
-            background: var(--surface-strong);
-            border-radius: var(--radius-sm);
-            box-shadow: 0 10px 24px rgba(84, 101, 255, 0.14);
-            font-size: 15px;
-            line-height: 1.5;
-            color: var(--text-strong);
-            border: 1px solid rgba(84, 101, 255, 0.22);
-            transition: transform 0.2s ease, box-shadow 0.2s ease, border 0.2s ease;
+            background: #f8f9ff;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
             cursor: pointer;
+            transition: all 0.3s;
         }
 
         .sentence-item:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 18px 30px rgba(84, 101, 255, 0.22);
-            border-color: rgba(84, 101, 255, 0.35);
+            background: #e8ebff;
+            transform: translateX(5px);
         }
 
-        .sentences-empty {
-            text-align: center;
-            color: var(--text-muted);
-            font-size: 14px;
-            padding: 24px 16px;
-            background: rgba(84, 101, 255, 0.08);
-            border-radius: var(--radius-sm);
-            border: 1px dashed rgba(84, 101, 255, 0.25);
+        .sentence-item.selected {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-left-color: #764ba2;
         }
 
-        /* Loading */
         .loading {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(248, 250, 255, 0.78);
             display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-        }
-
-        .loading.show {
-            display: flex;
-        }
-
-        .loading-card {
-            background: var(--surface);
-            border-radius: var(--radius-md);
-            padding: 32px 40px;
-            border: 1px solid var(--border);
-            box-shadow: var(--shadow-lg);
             text-align: center;
+            padding: 20px;
         }
 
         .spinner {
-            width: 48px;
-            height: 48px;
-            border: 4px solid rgba(84, 101, 255, 0.1);
-            border-top: 4px solid var(--primary);
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
             border-radius: 50%;
+            width: 40px;
+            height: 40px;
             animation: spin 1s linear infinite;
-            margin: 0 auto 18px;
+            margin: 0 auto;
         }
 
         @keyframes spin {
@@ -599,193 +227,198 @@
             100% { transform: rotate(360deg); }
         }
 
-        .loading-text {
-            color: var(--text-strong);
-            font-size: 16px;
-            font-weight: 600;
+        .empty-state {
+            text-align: center;
+            color: #999;
+            padding: 40px 20px;
+            font-style: italic;
         }
 
         @media (max-width: 1200px) {
-            body {
-                height: auto;
-                min-height: 100vh;
-                overflow-y: auto;
-                padding: 12px;
-            }
-
-            .app-shell {
-                height: auto;
-            }
-
             .container {
-                flex-direction: column;
-                height: auto;
-                padding: 16px;
-            }
-
-            .canvas-area {
-                flex-direction: column;
-                min-height: auto;
-            }
-
-            .sidebar,
-            .sidebar.focused,
-            .sentences-panel,
-            .sentences-panel.focused {
-                flex: 1 1 auto;
-                width: 100%;
-                height: auto;
-            }
-
-            .workspace-column {
-                order: 2;
-                height: auto;
-            }
-
-            .sentences-panel {
-                order: 3;
-            }
-        }
-
-        @media (max-width: 768px) {
-            body {
-                padding: 8px;
-            }
-
-            .container {
-                padding: 16px;
-            }
-
-            .workspace {
-                padding: 16px;
+                grid-template-columns: 1fr;
             }
         }
     </style>
 </head>
 <body>
-    <div class="app-shell">
-        <div class="container">
-            <!-- Sidebar Word Bank -->
-            <div class="sidebar" id="sidebar">
-                <div class="sidebar-header">
-                    <div class="logo">
-                        <span>Word Bank</span>
-                        <button class="focus-btn" id="focusWordsBtn">⇄</button>
-                    </div>
-                    <div class="input-container">
-                        <input
-                            type="text"
-                            id="contextInput"
-                            placeholder="Enter context"
-                        />
-                        <button class="btn btn-primary" id="generateBtn">Generate Words</button>
-                    </div>
-                </div>
-
-                <div class="search-box">
-                    <input
-                        type="text"
-                        id="searchInput"
-                        placeholder="Search words"
-                    />
-                </div>
-
-                <div class="word-bank" id="wordBank"></div>
-
-                <div class="term-count">
-                    <span id="termCount">0 words in bank</span>
-                </div>
-            </div>
-
-            <!-- Canvas Area -->
-            <div class="canvas-area">
-                <div class="workspace-column">
-                    <div class="workspace-heading">
-                        <h2>Workspace</h2>
-                    </div>
-
-                    <div class="workspace" id="workspace">
-                        <div class="empty-state">
-                            <div class="empty-state-icon">💬</div>
-                            <div>Workspace empty</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Sentences Panel -->
-                <div class="sentences-panel" id="sentencesPanel">
-                    <div class="sentences-header-box">
-                        <div class="sentences-header">
-                            <span>Sentences</span>
-                            <button class="focus-btn" id="focusSentencesBtn">⇄</button>
-                        </div>
-                        <button class="btn btn-primary" id="generateSentencesBtn">Create Sentences</button>
-                    </div>
-                    <div class="sentences-list" id="sentencesList">
-                        <div class="sentences-empty">No sentences yet.</div>
-                    </div>
-                </div>
-            </div>
-        </div>
+    <div class="header">
+        <h1>🗣️ AAC Communication Tool</h1>
+        <p>Upload an image, select words, and generate sentences</p>
     </div>
 
-    <div class="loading" id="loading">
-        <div class="loading-card">
-            <div class="spinner"></div>
-            <div class="loading-text">Generating words...</div>
+    <div class="container">
+        <!-- Column 1: Image Upload -->
+        <div class="column">
+            <h2>📷 Image Upload</h2>
+
+            <div class="upload-area" id="uploadArea">
+                <div style="font-size: 3em; margin-bottom: 15px;">📁</div>
+                <p style="font-size: 1.1em; color: #333; margin-bottom: 10px;">
+                    <strong>Drop your image here</strong>
+                </p>
+                <p style="color: #666;">or</p>
+                <button class="btn" onclick="document.getElementById('fileInput').click()" style="max-width: 200px; margin: 15px auto 0;">
+                    Browse Files
+                </button>
+            </div>
+
+            <input type="file" id="fileInput" accept="image/*">
+
+            <div id="preview">
+                <img id="previewImage" alt="Preview">
+                <button class="btn" id="analyzeBtn" onclick="analyzeImage()">
+                    Analyze Image
+                </button>
+            </div>
+
+            <div class="loading" id="imageLoading">
+                <div class="spinner"></div>
+                <p style="margin-top: 15px; color: #667eea;">Analyzing image...</p>
+            </div>
+        </div>
+
+        <!-- Column 2: Word Selection -->
+        <div class="column">
+            <h2>📝 Select Words</h2>
+
+            <div class="loading" id="wordsLoading">
+                <div class="spinner"></div>
+                <p style="margin-top: 15px; color: #667eea;">Generating words...</p>
+            </div>
+
+            <div class="words-grid" id="wordsGrid">
+                <div class="empty-state">
+                    Upload an image to generate words
+                </div>
+            </div>
+
+            <div class="selected-words" id="selectedWordsArea" style="display: none;">
+                <h3>Selected Words:</h3>
+                <div id="selectedWordsList"></div>
+                <button class="btn" id="generateSentencesBtn" onclick="generateSentences()" style="margin-top: 10px;">
+                    Generate Sentences
+                </button>
+            </div>
+        </div>
+
+        <!-- Column 3: Sentence Predictions -->
+        <div class="column">
+            <h2>💬 Sentence Predictions</h2>
+
+            <div class="loading" id="sentencesLoading">
+                <div class="spinner"></div>
+                <p style="margin-top: 15px; color: #667eea;">Generating sentences...</p>
+            </div>
+
+            <div class="sentences-list" id="sentencesList">
+                <div class="empty-state">
+                    Select words to generate sentences
+                </div>
+            </div>
         </div>
     </div>
 
     <script>
-        // Main app logic
-        let allTerms = [];
-        let canvasTerms = [];
+        let selectedFile = null;
+        let imageDescription = null;
+        let availableWords = [];
+        let selectedWords = [];
 
-        // Category data with emojis and words
-        const categories = {
-            '🤖 Context': { emoji: '🤖', name: 'Context', words: [] },
-            '👤 Pronouns': { emoji: '👤', name: 'Pronouns', words: ['👤 I', '👥 you', '👨 he', '👩 she', '⚡ it', '👫 we', '👥 they', '🙋 me', '🙋‍♂️ him', '🙋‍♀️ her', '🤝 us', '👬 them', '📌 my', '📍 your', '🔹 his', '🔸 her', '⭐ its', '🌟 our', '✨ their', '💎 mine', '🎁 yours', '💝 hers', '🏆 ours', '🎯 theirs', '👉 this', '👈 that', '🔽 these', '🔼 those', '❓ who', '❔ what', '🔀 which', '👤 whom', '🏷️ whose'] },
-            '❓ Question Words': { emoji: '❓', name: 'Question Words', words: ['❓ ?', '❓ who', '❔ what', '⏰ when', '📍 where', '🤔 why', '🛠️ how', '🔀 which', '🏷️ whose', '👤 whom', '💰 how much', '🔢 how many', '⏱️ how long', '📏 how far', '🔁 how often'] },
-            '📍 Prepositions': { emoji: '📍', name: 'Prepositions', words: ['📥 in', '🔛 on', '📍 at', '👉 by', '🤝 with', '⬅️ from', '➡️ to', '📦 of', '🎁 for', '💭 about', '⬆️ above', '↔️ across', '▶️ after', '🚫 against', '🛤️ along', '🎪 among', '🔄 around', '↗️ as', '⏪ before', '⬇️ behind', '🔽 below', '⤵️ beneath', '↕️ beside', '⬌ between', '🌌 beyond', '⬇️ down', '⏳ during', '🚷 except', '🏠 inside', '📥 into', '💝 like', '📌 near', '🔌 off', '🚪 out', '🏞️ outside', '🔝 over', '⏮️ past', '📅 since', '🔀 through', '🌐 throughout', '⏰ till', '🎯 toward', '⬇️ under', '⏳ until', '⬆️ up', '🔛 upon', '📦 within', '🚫 without'] },
-            '🙏 Politeness': { emoji: '🙏', name: 'Politeness', words: ['🙏 please', '💝 thank you', '🙌 thanks', '😔 sorry', '🙋 excuse me', '🎭 pardon', '🤗 welcome', '💖 appreciate', '🙏 grateful', '✨ kindly', '🤲 may I', '❓ would you', '🙋 could you', '🤝 if you don\'t mind', '💭 I\'d appreciate', '🎁 many thanks', '🤝 much obliged'] },
-            '👋 Greetings': { emoji: '👋', name: 'Greetings', words: ['👋 hello', '✋ hi', '🙌 hey', '🌅 good morning', '☀️ good afternoon', '🌆 good evening', '🌙 good night', '👋 goodbye', '✌️ bye', '👀 see you', '💝 take care', '🌟 have a good day', '🤝 nice to meet you', '❓ how are you', '🔥 what\'s up', '🤠 howdy', '🎭 greetings', '🤗 welcome'] },
-            '📍 Spatial/Location': { emoji: '🗺️', name: 'Spatial/Location', words: ['📍 here', '👉 there', '🌍 everywhere', '❓ somewhere', '🚫 nowhere', '🗺️ anywhere', '⬆️ up', '⬇️ down', '⬅️ left', '➡️ right', '▶️ forward', '◀️ backward', '🔜 ahead', '🔙 behind', '📌 nearby', '🌌 far', '🤏 close', '↗️ away', '🔄 around', '🏠 inside', '🌳 outside', '⬆️ upstairs', '⬇️ downstairs', '↔️ next to', '↕️ opposite', '🔗 adjacent'] },
-            '⏰ Time': { emoji: '⏰', name: 'Time', words: ['⚡ now', '⏰ then', '📅 today', '⏮️ yesterday', '⏭️ tomorrow', '🌙 tonight', '🌅 morning', '☀️ afternoon', '🌆 evening', '🌃 night', '⏰ later', '🔜 soon', '⏰ early', '⌛ late', '⏪ before', '⏩ after', '⏳ during', '⌚ while', '♾️ always', '🚫 never', '🔄 sometimes', '📊 often', '🥉 rarely', '📈 usually', '✅ already', '⏰ yet', '⏸️ still', '⚡ just', '🕐 recently', '⏮️ ago'] },
-            '👁️ Sensory Verbs': { emoji: '👁️', name: 'Sensory Verbs', words: ['👁️ see', '👀 look', '📺 watch', '🔍 observe', '💡 notice', '👁️ glimpse', '👁️ stare', '👀 gaze', '👁️ peek', '👂 hear', '🎧 listen', '🔊 sound', '👃 smell', '👃 sniff', '👅 taste', '🤚 touch', '💭 feel', '🧠 sense', '🎯 perceive', '⚡ experience'] },
-            '🧠 Mental/Action Verbs': { emoji: '🧠', name: 'Mental/Action Verbs', words: ['🧠 know', '💭 think', '✨ believe', '💡 understand', '🧠 remember', '🌫️ forget', '📚 learn', '💡 realize', '🔍 recognize', '🌈 imagine', '🤔 wonder', '💭 suppose', '📊 assume', '🎯 expect', '🌟 hope', '✨ wish', '💝 want', '📍 need', '❤️ like', '💖 love', '💔 hate', '⭐ prefer', '😊 enjoy', '🤔 mind', '💝 care', '😰 worry', '😨 fear', '🤨 doubt', '🤝 trust', '💬 mean', '🎯 intend', '📋 plan', '✅ decide', '🎯 choose', '🤔 consider', '🧩 figure', '🎲 guess', '🎰 bet', '⚡ do', '🔨 make', '📦 get', '🤲 take', '🎁 give', '📌 put', '🔧 use', '🔍 find', '👉 show', '🤝 help', '✅ let', '📦 keep', '👋 leave', '▶️ start', '🎬 begin', '⏹️ stop', '🏁 end', '✅ finish', '▶️ continue', '💪 try', '🎯 attempt', '✅ manage', '❌ fail', '🏆 succeed', '💼 work', '🎮 play', '😴 rest', '⏰ wait', '📍 stay', '🔒 remain', '🔄 become', '🔀 change', '🌱 grow', '📈 develop', '⬆️ improve', '📈 increase', '📉 decrease', '➕ add', '➖ remove', '✅ include', '🚫 exclude', '📦 contain', '🧩 consist', '🏷️ belong', '👑 own', '🤝 have', '💎 possess', '🚫 lack', '😢 miss', '📉 lose', '🏆 win', '📈 gain', '💰 earn', '🛒 buy', '💵 sell', '💸 spend', '💰 save', '🗑️ waste', '🤝 share', '➗ divide', '🔗 join', '✂️ separate', '🔗 connect', '📎 attach', '🔓 detach'] },
-            '🚶 Physical/Communication Verbs': { emoji: '🚶', name: 'Physical/Communication Verbs', words: ['🚶 go', '👋 come', '🏃 move', '🚶 walk', '🏃 run', '🦘 jump', '🧗 climb', '⬇️ fall', '🪑 sit', '🧍 stand', '🛏️ lie', '😴 sleep', '⏰ wake', '⬆️ rise', '🔄 turn', '👉 push', '🤲 pull', '⬆️ lift', '📦 carry', '🤲 hold', '✊ grab', '🤾 catch', '🎯 throw', '👊 hit', '🦵 kick', '🤚 touch', '🤲 reach', '👉 point', '👋 wave', '🤝 shake', '🙂 nod', '🚪 open', '🔒 close', '🔐 lock', '🔓 unlock', '💥 break', '🔧 fix', '🏗️ build', '🔨 make', '✨ create', '✂️ cut', '📄 tear', '🪢 bend', '📋 fold', '🤸 stretch', '🤏 squeeze', '👆 press', '🖐️ rub', '🖐️ scratch', '🧹 wipe', '✨ clean', '🚿 wash', '💨 dry', '👕 wear', '👔 dress', '➖ remove', '🪝 hang', '⬇️ drop', '💬 say', '🗣️ tell', '🗨️ speak', '💬 talk', '❓ ask', '💡 answer', '↩️ reply', '💬 respond', '📖 explain', '📝 describe', '💭 mention', '📢 state', '📣 declare', '📢 announce', '📰 report', 'ℹ️ inform', '🔔 notify', '⚠️ warn', '💡 advise', '💭 suggest', '🌟 recommend', '📋 propose', '🎁 offer', '🙏 request', '📢 demand', '📜 order', '👑 command', '🙏 beg', '😢 plead', '💢 argue', '💬 discuss', '⚖️ debate', '✅ agree', '❌ disagree', '🚫 deny', '✅ admit', '😔 confess', '🤝 promise', '✋ swear', '📢 claim', '💪 insist', '😤 complain', '👎 criticize', '👏 praise', '🙏 thank', '😔 apologize', '👋 greet', '🤝 introduce', '📞 call', '🏷️ name', '🤫 whisper', '📢 shout', '😱 yell', '😱 scream', '😢 cry', '😂 laugh', '😊 smile', '🍽️ eat', '🥤 drink'] },
-            '🔢 Quantity': { emoji: '🔢', name: 'Quantity', words: ['💯 all', '📊 some', '📈 many', '🤏 few', '📊 several', '💯 much', '🤏 little', '➕ more', '➖ less', '🏆 most', '🥉 least', '✅ enough', '📦 plenty', '📦 lots', '🚫 none', '❓ any', '1️⃣ each', '💯 every', '2️⃣ both', '🔀 either', '🚫 neither', '½ half', '💯 whole', '🧩 part', '🧩 piece'] },
-            '✨ Quality/Description': { emoji: '✨', name: 'Quality/Description', words: ['👍 good', '👎 bad', '📏 big', '🤏 small', '📐 large', '🤏 little', '📏 long', '📐 short', '🗼 tall', '⬆️ high', '⬇️ low', '↔️ wide', '🚪 narrow', '📚 thick', '📄 thin', '⚖️ heavy', '🪶 light', '🪨 hard', '🧸 soft', '🔥 hot', '❄️ cold', '☀️ warm', '🧊 cool', '✨ new', '📜 old', '👶 young', '⚡ fast', '🐌 slow', '✅ easy', '😰 difficult', '🪨 hard', '😊 simple', '🧩 complex', '✨ clean', '🗑️ dirty', '😍 beautiful', '👹 ugly', '😊 nice', '💖 pretty', '💪 strong', '😔 weak', '💡 bright', '🌑 dark', '📢 loud', '🤫 quiet', '📦 full', '📭 empty', '✅ right', '❌ wrong', '✅ true', '❌ false', '💎 real', '🎭 fake', '✅ safe', '⚠️ dangerous'] },
-            '🔗 Connectors': { emoji: '🔗', name: 'Connectors', words: ['➕ and', '🔀 or', '❗ but', '↗️ so', '💡 because', '❓ if', '➡️ then', '🔀 although', '🔀 though', '↔️ however', '➡️ therefore', '➡️ thus', '➡️ hence', '➕ moreover', '➕ furthermore', '➕ besides', '➕ also', '➕ too', '🔀 either', '🚫 neither', '❗ yet', '⏸️ still', '🔀 instead', '🔀 otherwise', '⏸️ meanwhile', '⏰ while', '↔️ whereas', '🚫 unless', '⏰ until', '📅 since'] },
-            '✅ Agreement/Disagreement': { emoji: '✅', name: 'Agreement/Disagreement', words: ['✅ yes', '❌ no', '👌 okay', '👌 ok', '👍 sure', '👌 alright', '😊 fine', '🤝 agreed', '💯 exactly', '💯 absolutely', '💯 definitely', '✅ certainly', '💯 of course', '✅ indeed', '✅ right', '✅ correct', '✅ true', '🤔 maybe', '🤷 perhaps', '❓ possibly', '📊 probably', '✅ I agree', '❌ I disagree', '🤔 I think so', '🤷 I don\'t think so'] },
-            '📦 Common Nouns': { emoji: '📦', name: 'Common Nouns', words: ['👤 person', '👥 people', '👨 man', '👩 woman', '👶 child', '👨‍👩‍👧‍👦 family', '🤝 friend', '📦 thing', '📍 place', '⏰ time', '📅 day', '📆 year', '🛤️ way', '💼 work', '🏠 home', '🏡 house', '🚪 room', '🚪 door', '🪟 window', '🪑 table', '🪑 chair', '🛏️ bed', '🍽️ food', '💧 water', '💰 money', '📚 book', '📱 phone', '🚗 car', '🏙️ city', '🌍 country', '🌎 world', '💫 life', '✋ hand', '👁️ eye', '😊 face', '🧠 head', '🫀 body', '🧩 part', '↔️ side', '⬅️ back', '⬆️ top', '⬇️ bottom', '🏁 end', '📍 point', '💬 word', '🏷️ name', '🔢 number', '❓ question', '⚠️ problem', '💡 idea', '📖 story'] }
-        };
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const preview = document.getElementById('preview');
+        const previewImage = document.getElementById('previewImage');
 
-        const contextInput = document.getElementById('contextInput');
-        const generateBtn = document.getElementById('generateBtn');
-        const wordBank = document.getElementById('wordBank');
-        const workspace = document.getElementById('workspace');
-        const loading = document.getElementById('loading');
-        const searchInput = document.getElementById('searchInput');
-        const termCount = document.getElementById('termCount');
-
-        // Initialize with default categories
-        displayWordBank();
-
-        generateBtn.addEventListener('click', generateTerms);
-        contextInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') generateTerms();
+        // Drag and drop handlers
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+            }, false);
         });
 
-        async function generateTerms() {
-            const context = contextInput.value.trim();
-            if (!context) {
-                alert('Please enter a context');
-                return;
-            }
+        ['dragenter', 'dragover'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, () => {
+                uploadArea.classList.add('dragover');
+            }, false);
+        });
 
-            loading.classList.add('show');
-            generateBtn.disabled = true;
+        ['dragleave', 'drop'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, () => {
+                uploadArea.classList.remove('dragover');
+            }, false);
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        }, false);
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+        });
+
+        function handleFile(file) {
+            selectedFile = file;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                previewImage.src = e.target.result;
+                preview.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function analyzeImage() {
+            if (!selectedFile) return;
+
+            const imageLoading = document.getElementById('imageLoading');
+            const analyzeBtn = document.getElementById('analyzeBtn');
+
+            imageLoading.style.display = 'block';
+            analyzeBtn.disabled = true;
+
+            const formData = new FormData();
+            formData.append('image', selectedFile);
+
+            try {
+                // Analyze image
+                const response = await fetch('/analyze-image', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    imageDescription = data.description;
+                    console.log('Image description (backend only):', data.description);
+
+                    // Automatically generate words
+                    await generateWords();
+                } else {
+                    alert('Error: ' + (data.error || 'Failed to analyze image'));
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            } finally {
+                imageLoading.style.display = 'none';
+                analyzeBtn.disabled = false;
+            }
+        }
+
+        async function generateWords() {
+            if (!imageDescription) return;
+
+            const wordsLoading = document.getElementById('wordsLoading');
+            const wordsGrid = document.getElementById('wordsGrid');
+
+            wordsLoading.style.display = 'block';
+            wordsGrid.innerHTML = '';
 
             try {
                 const response = await fetch('/generate', {
@@ -793,283 +426,94 @@
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ context })
+                    body: JSON.stringify({
+                        context: imageDescription
+                    })
                 });
 
                 const data = await response.json();
 
                 if (data.success) {
-                    // Put generated terms in the Context category
-                    categories['🤖 Context'].words = data.terms;
-                    allTerms = getAllTerms();
-                    displayWordBank();
+                    availableWords = data.terms;
+                    displayWords();
                 } else {
-                    alert('Error: ' + data.error);
+                    alert('Error: ' + (data.error || 'Failed to generate words'));
                 }
             } catch (error) {
-                alert('Error generating terms: ' + error.message);
+                alert('Error: ' + error.message);
             } finally {
-                loading.classList.remove('show');
-                generateBtn.disabled = false;
+                wordsLoading.style.display = 'none';
             }
         }
 
-        function getAllTerms() {
-            let terms = [];
-            for (let categoryKey in categories) {
-                terms = terms.concat(categories[categoryKey].words);
-            }
-            return terms;
+        function displayWords() {
+            const wordsGrid = document.getElementById('wordsGrid');
+            wordsGrid.innerHTML = '';
+
+            availableWords.forEach(word => {
+                const btn = document.createElement('button');
+                btn.className = 'word-btn';
+                btn.textContent = word;
+                btn.onclick = () => toggleWord(word, btn);
+                wordsGrid.appendChild(btn);
+            });
         }
 
-        function displayWordBank(searchQuery = '') {
-            wordBank.innerHTML = '';
+        function toggleWord(word, btn) {
+            const index = selectedWords.indexOf(word);
 
-            for (let categoryKey in categories) {
-                const categoryData = categories[categoryKey];
-                const categoryTerms = categoryData.words;
+            if (index > -1) {
+                selectedWords.splice(index, 1);
+                btn.classList.remove('selected');
+            } else {
+                selectedWords.push(word);
+                btn.classList.add('selected');
+            }
 
-                // Filter by search if applicable
-                let filteredTerms = categoryTerms;
-                if (searchQuery) {
-                    filteredTerms = categoryTerms.filter(term =>
-                        term.toLowerCase().includes(searchQuery.toLowerCase())
-                    );
-                }
+            updateSelectedWords();
+        }
 
-                // Skip empty categories when searching
-                if (searchQuery && filteredTerms.length === 0) continue;
+        function updateSelectedWords() {
+            const selectedWordsArea = document.getElementById('selectedWordsArea');
+            const selectedWordsList = document.getElementById('selectedWordsList');
 
-                // Create category
-                const categoryDiv = document.createElement('div');
-                categoryDiv.className = 'category';
+            if (selectedWords.length > 0) {
+                selectedWordsArea.style.display = 'block';
+                selectedWordsList.innerHTML = selectedWords.map(word =>
+                    `<span class="selected-word-tag" onclick="removeWord('${word}')">${word} ×</span>`
+                ).join('');
+            } else {
+                selectedWordsArea.style.display = 'none';
+            }
+        }
 
-                // Category header
-                const header = document.createElement('div');
-                header.className = 'category-header';
-                header.innerHTML = `
-                    <span class="category-icon">${categoryData.emoji}</span>
-                    <span class="category-name">${categoryData.name} (${filteredTerms.length})</span>
-                    <span class="category-arrow">▶</span>
-                `;
+        function removeWord(word) {
+            const index = selectedWords.indexOf(word);
+            if (index > -1) {
+                selectedWords.splice(index, 1);
+                updateSelectedWords();
 
-                // Category content
-                const content = document.createElement('div');
-                content.className = 'category-content';
-
-                // Add terms
-                filteredTerms.forEach(term => {
-                    const card = document.createElement('div');
-                    card.className = 'bank-term';
-                    card.textContent = term;
-                    card.draggable = true;
-
-                    card.addEventListener('dragstart', (e) => {
-                        e.dataTransfer.setData('text/plain', term);
-                        e.dataTransfer.effectAllowed = 'copy';
-                    });
-
-                    card.addEventListener('click', () => {
-                        addToCanvas(term);
-                    });
-
-                    content.appendChild(card);
-                });
-
-                // Toggle expand/collapse
-                header.addEventListener('click', () => {
-                    const arrow = header.querySelector('.category-arrow');
-                    const isExpanded = content.classList.contains('expanded');
-
-                    if (isExpanded) {
-                        content.classList.remove('expanded');
-                        arrow.classList.remove('expanded');
-                        header.classList.remove('expanded');
-                    } else {
-                        content.classList.add('expanded');
-                        arrow.classList.add('expanded');
-                        header.classList.add('expanded');
+                // Update button state
+                const buttons = document.querySelectorAll('.word-btn');
+                buttons.forEach(btn => {
+                    if (btn.textContent === word) {
+                        btn.classList.remove('selected');
                     }
                 });
-
-                categoryDiv.appendChild(header);
-                categoryDiv.appendChild(content);
-                wordBank.appendChild(categoryDiv);
-            }
-
-            updateTermCount();
-        }
-
-        searchInput.addEventListener('input', (e) => {
-            const query = e.target.value;
-            displayWordBank(query);
-        });
-
-        // Canvas drag and drop
-        let draggedCard = null;
-        let insertionMarker = null;
-
-        workspace.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            e.dataTransfer.dropEffect = draggedCard ? 'move' : 'copy';
-            workspace.classList.add('dragover');
-
-            const afterElement = getDragAfterElement(workspace, e.clientX, e.clientY);
-
-            // Remove existing marker
-            if (insertionMarker && !draggedCard) {
-                insertionMarker.remove();
-                insertionMarker = null;
-            }
-
-            if (draggedCard) {
-                // Reordering existing card
-                if (afterElement == null) {
-                    workspace.appendChild(draggedCard);
-                } else {
-                    workspace.insertBefore(draggedCard, afterElement);
-                }
-            } else {
-                // Show insertion marker for new items
-                if (!insertionMarker) {
-                    insertionMarker = document.createElement('div');
-                    insertionMarker.className = 'insertion-marker';
-                }
-
-                if (afterElement == null) {
-                    workspace.appendChild(insertionMarker);
-                } else {
-                    workspace.insertBefore(insertionMarker, afterElement);
-                }
-            }
-        });
-
-        workspace.addEventListener('dragleave', (e) => {
-            if (e.target === workspace) {
-                workspace.classList.remove('dragover');
-                if (insertionMarker) {
-                    insertionMarker.remove();
-                    insertionMarker = null;
-                }
-            }
-        });
-
-        workspace.addEventListener('drop', (e) => {
-            e.preventDefault();
-            workspace.classList.remove('dragover');
-
-            // Clean up insertion marker
-            if (insertionMarker) {
-                insertionMarker.remove();
-                insertionMarker = null;
-            }
-
-            const term = e.dataTransfer.getData('text/plain');
-            if (term && !draggedCard) {
-                // Adding from sidebar
-                const afterElement = getDragAfterElement(workspace, e.clientX, e.clientY);
-                addToCanvas(term, afterElement);
-            }
-
-            draggedCard = null;
-        });
-
-        function getDragAfterElement(container, x, y) {
-            const draggableElements = [...container.querySelectorAll('.canvas-term:not(.dragging)')];
-
-            let closestElement = null;
-            let closestDistance = Infinity;
-
-            draggableElements.forEach(child => {
-                const box = child.getBoundingClientRect();
-                const centerX = box.left + box.width / 2;
-                const centerY = box.top + box.height / 2;
-
-                const distance = Math.sqrt(Math.pow(x - centerX, 2) + Math.pow(y - centerY, 2));
-
-                // If cursor is to the left of the element's center, insert before it
-                if (x < centerX && distance < closestDistance) {
-                    closestDistance = distance;
-                    closestElement = child;
-                }
-            });
-
-            return closestElement;
-        }
-
-        function addToCanvas(term, beforeElement) {
-            const card = document.createElement('div');
-            card.className = 'canvas-term';
-            card.textContent = term;
-            card.draggable = true;
-
-            // Remove button
-            const removeBtn = document.createElement('div');
-            removeBtn.className = 'remove-btn';
-            removeBtn.textContent = '×';
-            removeBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                card.remove();
-                canvasTerms = canvasTerms.filter(t => t.element !== card);
-
-                // Show empty state if no more terms
-                const emptyState = workspace.querySelector('.empty-state');
-                if (emptyState && canvasTerms.length === 0) {
-                    emptyState.style.display = 'block';
-                }
-            });
-            card.appendChild(removeBtn);
-
-            // Drag events for reordering
-            card.addEventListener('dragstart', (e) => {
-                draggedCard = card;
-                card.classList.add('dragging');
-                e.dataTransfer.effectAllowed = 'move';
-            });
-
-            card.addEventListener('dragend', () => {
-                card.classList.remove('dragging');
-                draggedCard = null;
-            });
-
-            // Insert at position or append
-            if (beforeElement) {
-                workspace.insertBefore(card, beforeElement);
-            } else {
-                workspace.appendChild(card);
-            }
-
-            canvasTerms.push({ term, element: card });
-
-            // Hide empty state
-            const emptyState = workspace.querySelector('.empty-state');
-            if (emptyState && canvasTerms.length > 0) {
-                emptyState.style.display = 'none';
             }
         }
 
-        function updateTermCount() {
-            const total = getAllTerms().length;
-            termCount.textContent = `${total} words in bank`;
-        }
-
-        // Sentence generation
-        const generateSentencesBtn = document.getElementById('generateSentencesBtn');
-        const sentencesList = document.getElementById('sentencesList');
-
-        generateSentencesBtn.addEventListener('click', async () => {
-            // Get words from workspace in order
-            const wordsInWorkspace = Array.from(workspace.querySelectorAll('.canvas-term'))
-                .map(el => el.textContent.replace('×', '').trim());
-
-            if (wordsInWorkspace.length === 0) {
-                alert('Add some words to the workspace first!');
+        async function generateSentences() {
+            if (selectedWords.length === 0) {
+                alert('Please select at least one word');
                 return;
             }
 
-            generateSentencesBtn.disabled = true;
-            generateSentencesBtn.textContent = 'Generating...';
-            sentencesList.innerHTML = '<div class="sentences-empty">Generating sentences...</div>';
+            const sentencesLoading = document.getElementById('sentencesLoading');
+            const sentencesList = document.getElementById('sentencesList');
+
+            sentencesLoading.style.display = 'block';
+            sentencesList.innerHTML = '';
 
             try {
                 const response = await fetch('/generate-sentences', {
@@ -1077,70 +521,58 @@
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ words: wordsInWorkspace })
+                    body: JSON.stringify({
+                        words: selectedWords
+                    })
                 });
 
                 const data = await response.json();
 
-                if (data.success && data.sentences) {
-                    sentencesList.innerHTML = '';
-                    data.sentences.forEach(sentence => {
-                        const sentenceItem = document.createElement('div');
-                        sentenceItem.className = 'sentence-item';
-                        sentenceItem.textContent = sentence;
-                        sentencesList.appendChild(sentenceItem);
-                    });
+                if (data.success) {
+                    displaySentences(data.sentences);
                 } else {
-                    sentencesList.innerHTML = '<div class="sentences-empty">Error generating sentences. Please try again.</div>';
+                    alert('Error: ' + (data.error || 'Failed to generate sentences'));
                 }
             } catch (error) {
-                console.error('Error:', error);
-                sentencesList.innerHTML = '<div class="sentences-empty">Error generating sentences. Please try again.</div>';
+                alert('Error: ' + error.message);
             } finally {
-                generateSentencesBtn.disabled = false;
-                generateSentencesBtn.textContent = 'Create Sentences';
+                sentencesLoading.style.display = 'none';
             }
-        });
+        }
 
-        // Focus functionality
-        const sidebar = document.getElementById('sidebar');
-        const sentencesPanel = document.getElementById('sentencesPanel');
-        const focusWordsBtn = document.getElementById('focusWordsBtn');
-        const focusSentencesBtn = document.getElementById('focusSentencesBtn');
+        function displaySentences(sentences) {
+            const sentencesList = document.getElementById('sentencesList');
+            sentencesList.innerHTML = '';
 
-        focusWordsBtn.addEventListener('click', () => {
-            const isFocused = sidebar.classList.contains('focused');
-
-            if (isFocused) {
-                sidebar.classList.remove('focused');
-                focusWordsBtn.classList.remove('active');
-                focusWordsBtn.textContent = '⇄';
-            } else {
-                sidebar.classList.add('focused');
-                sentencesPanel.classList.remove('focused');
-                focusWordsBtn.classList.add('active');
-                focusSentencesBtn.classList.remove('active');
-                focusWordsBtn.textContent = '⇆';
-                focusSentencesBtn.textContent = '⇄';
+            if (sentences.length === 0) {
+                sentencesList.innerHTML = '<div class="empty-state">No sentences generated</div>';
+                return;
             }
-        });
 
-        focusSentencesBtn.addEventListener('click', () => {
-            const isFocused = sentencesPanel.classList.contains('focused');
+            sentences.forEach(sentence => {
+                const item = document.createElement('div');
+                item.className = 'sentence-item';
+                item.textContent = sentence;
+                item.onclick = () => selectSentence(item, sentence);
+                sentencesList.appendChild(item);
+            });
+        }
 
-            if (isFocused) {
-                sentencesPanel.classList.remove('focused');
-                focusSentencesBtn.classList.remove('active');
-                focusSentencesBtn.textContent = '⇄';
-            } else {
-                sentencesPanel.classList.add('focused');
-                sidebar.classList.remove('focused');
-                focusSentencesBtn.classList.add('active');
-                focusWordsBtn.classList.remove('active');
-                focusSentencesBtn.textContent = '⇆';
-                focusWordsBtn.textContent = '⇄';
+        function selectSentence(element, sentence) {
+            // Remove previous selection
+            document.querySelectorAll('.sentence-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+
+            // Select current
+            element.classList.add('selected');
+
+            // Optional: Speak the sentence or copy to clipboard
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(sentence);
+                speechSynthesis.speak(utterance);
             }
-        });
+        }
     </script>
 </body>
 </html>

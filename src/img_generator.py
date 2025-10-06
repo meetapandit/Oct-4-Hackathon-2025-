@@ -40,7 +40,7 @@ def get_image_description(image_bytes: bytes, mime_type: str) -> Dict[str, str]:
     api_key = os.getenv("IMG_GENERATOR_ANTHRPIC_API_KEY")
 
     if not api_key:
-        raise ValueError("No API key found. Please set ANTHROPIC_API_KEY or IMG_GENERATOR_ANTHRPIC_API_KEY in .env file")
+        raise ValueError("No API key found. Please set IMG_GENERATOR_ANTHRPIC_API_KEY in .env file")
 
     # Remove quotes if present (dotenv should handle this, but just in case)
     api_key = api_key.strip('"').strip("'")
@@ -467,6 +467,38 @@ async def root():
                 background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
                 margin-left: 10px;
             }
+            .btn-camera {
+                background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+                margin-left: 10px;
+            }
+            .camera-modal {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.8);
+                z-index: 1000;
+                justify-content: center;
+                align-items: center;
+            }
+            .camera-container {
+                background: white;
+                padding: 30px;
+                border-radius: 20px;
+                max-width: 800px;
+                text-align: center;
+            }
+            #cameraVideo {
+                width: 100%;
+                max-width: 640px;
+                border-radius: 10px;
+                margin: 20px 0;
+            }
+            #cameraCanvas {
+                display: none;
+            }
             .loading {
                 display: none;
                 text-align: center;
@@ -501,12 +533,32 @@ async def root():
                 <button class="btn" onclick="document.getElementById('fileInput').click()">
                     Browse Files
                 </button>
+                <button class="btn btn-camera" onclick="openCamera()">
+                    📷 Take Photo
+                </button>
                 <p style="margin-top: 15px; font-size: 0.9em; color: #999;">
                     Supported formats: JPEG, PNG, WebP, GIF, HEIC
                 </p>
             </div>
 
             <input type="file" id="fileInput" accept="image/jpeg,image/jpg,image/png,image/webp,image/gif,image/heic,image/heif,.heic">
+
+            <!-- Camera Modal -->
+            <div class="camera-modal" id="cameraModal">
+                <div class="camera-container">
+                    <h2 style="color: #333; margin-bottom: 20px;">📷 Take a Photo</h2>
+                    <video id="cameraVideo" autoplay></video>
+                    <canvas id="cameraCanvas"></canvas>
+                    <div>
+                        <button class="btn btn-camera" onclick="capturePhoto()">
+                            📸 Capture
+                        </button>
+                        <button class="btn" onclick="closeCamera()" style="background: #ef4444;">
+                            ❌ Cancel
+                        </button>
+                    </div>
+                </div>
+            </div>
 
             <div id="preview">
                 <img id="previewImage" alt="Preview" style="display: block; margin: 0 auto;">
@@ -681,6 +733,57 @@ async def root():
                     loading.style.display = 'none';
                     generateVocabBtn.disabled = false;
                 }
+            }
+
+            // Camera functionality
+            let cameraStream = null;
+            const cameraModal = document.getElementById('cameraModal');
+            const cameraVideo = document.getElementById('cameraVideo');
+            const cameraCanvas = document.getElementById('cameraCanvas');
+
+            async function openCamera() {
+                try {
+                    cameraStream = await navigator.mediaDevices.getUserMedia({
+                        video: {
+                            width: { ideal: 1280 },
+                            height: { ideal: 720 }
+                        }
+                    });
+                    cameraVideo.srcObject = cameraStream;
+                    cameraModal.style.display = 'flex';
+                } catch (error) {
+                    alert('Error accessing camera: ' + error.message);
+                }
+            }
+
+            function closeCamera() {
+                if (cameraStream) {
+                    cameraStream.getTracks().forEach(track => track.stop());
+                    cameraStream = null;
+                }
+                cameraModal.style.display = 'none';
+            }
+
+            function capturePhoto() {
+                // Set canvas size to match video
+                cameraCanvas.width = cameraVideo.videoWidth;
+                cameraCanvas.height = cameraVideo.videoHeight;
+
+                // Draw video frame to canvas
+                const context = cameraCanvas.getContext('2d');
+                context.drawImage(cameraVideo, 0, 0);
+
+                // Convert canvas to blob
+                cameraCanvas.toBlob((blob) => {
+                    // Create a file from the blob
+                    const file = new File([blob], 'camera-photo.jpg', { type: 'image/jpeg' });
+
+                    // Use the existing handleFile function
+                    handleFile(file);
+
+                    // Close camera
+                    closeCamera();
+                }, 'image/jpeg', 0.95);
             }
         </script>
     </body>
