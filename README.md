@@ -1,4 +1,7 @@
-# AAC Communication Tool
+
+# Augmentative and Alternative Communication Tool
+
+A FastAPI web application that generates detailed descriptions of images using Claude's vision capabilities.
 
 An AI-powered Augmentative and Alternative Communication (AAC) tool that helps users generate contextual vocabulary and sentences from images.
 
