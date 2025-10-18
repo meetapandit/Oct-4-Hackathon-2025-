@@ -1074,7 +1074,7 @@
 </head>
 <body>
     <!-- Welcome Modal (Voice Selection) -->
-    <div id="setupModal" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.7); display: none; align-items: center; justify-content: center; z-index: 2000;">
+    <div id="setupModal" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.7); display: flex; align-items: center; justify-content: center; z-index: 2000;">
         <div style="background: var(--surface); border-radius: var(--radius-md); padding: 32px; max-width: 500px; width: 90%; max-height: 85vh; overflow-y: auto; border: 1px solid var(--border); box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);">
             <h2 style="margin-bottom: 16px; font-size: 24px;">Welcome to AI-AAC! 💬</h2>
 
@@ -1617,6 +1617,23 @@
                     setupModal.style.display = 'none';
                 }
             });
+
+        // Auto-dismiss modal after 5 seconds if user hasn't interacted
+        setTimeout(() => {
+            if (setupModal.style.display !== 'none') {
+                // Auto-select first available voice and dismiss
+                const voiceSelectModal = document.getElementById('voiceSelectModal');
+                const defaultVoice = availableVoices.find(v => v.lang.startsWith('en')) || availableVoices[0];
+                if (defaultVoice) {
+                    selectedVoice = defaultVoice;
+                    localStorage.setItem('tts_voice', defaultVoice.name);
+                    if (voiceSelectModal) {
+                        voiceSelectModal.value = defaultVoice.name;
+                    }
+                }
+                setupModal.style.display = 'none';
+            }
+        }, 5000);
 
         // Test voice button
         testVoiceBtn.addEventListener('click', () => {
