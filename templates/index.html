@@ -1074,7 +1074,7 @@
 </head>
 <body>
     <!-- Welcome Modal (Voice Selection) -->
-    <div id="setupModal" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.7); display: flex; align-items: center; justify-content: center; z-index: 2000;">
+    <div id="setupModal" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.7); display: none; align-items: center; justify-content: center; z-index: 2000;">
         <div style="background: var(--surface); border-radius: var(--radius-md); padding: 32px; max-width: 500px; width: 90%; max-height: 85vh; overflow-y: auto; border: 1px solid var(--border); box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);">
             <h2 style="margin-bottom: 16px; font-size: 24px;">Welcome to AI-AAC! 💬</h2>
 
@@ -1103,7 +1103,7 @@
             </div>
 
             <p style="margin-bottom: 16px; color: var(--text-muted); line-height: 1.6; font-size: 14px;">
-                To get started, please select a voice for text-to-speech.
+                To get started, optionally select a voice for text-to-speech. You can change this later in settings or continue with the default voice.
             </p>
 
             <!-- Voice Selection -->
@@ -1433,6 +1433,13 @@
                     if (voiceSelectModal) {
                         voiceSelectModal.value = savedVoice;
                     }
+                } else {
+                    // Auto-select first English voice as default
+                    const defaultVoice = availableVoices.find(v => v.lang.startsWith('en')) || availableVoices[0];
+                    if (defaultVoice && voiceSelectModal) {
+                        voiceSelectModal.value = defaultVoice.name;
+                        selectedVoice = defaultVoice;
+                    }
                 }
             }
         }
@@ -1483,6 +1490,15 @@
             speechSynthesis.onvoiceschanged = loadVoices;
         }
         loadVoices(); // Call immediately in case voices are already loaded
+
+        // Fallback: If voices don't load within 3 seconds, provide default option
+        setTimeout(() => {
+            const voiceSelectModal = document.getElementById('voiceSelectModal');
+            if (voiceSelectModal && availableVoices.length === 0) {
+                // Show fallback message
+                voiceSelectModal.innerHTML = '<option value="default">🔊 Default System Voice (TTS may not be available)</option>';
+            }
+        }, 3000);
 
         function removeAllEmojis(text) {
             // Comprehensive emoji removal - covers all emoji ranges
@@ -1623,14 +1639,22 @@
         saveSetupBtn.addEventListener('click', () => {
             const voiceSelectModal = document.getElementById('voiceSelectModal');
             const voiceName = voiceSelectModal ? voiceSelectModal.value : '';
-            if (!voiceName) {
-                alert('Please select a voice for text-to-speech');
-                return;
-            }
 
-            // Store voice selection
-            selectedVoice = availableVoices.find(v => v.name === voiceName);
-            localStorage.setItem('tts_voice', voiceName);
+            // Store voice selection if available
+            if (voiceName && voiceName !== 'default') {
+                selectedVoice = availableVoices.find(v => v.name === voiceName);
+                if (selectedVoice) {
+                    localStorage.setItem('tts_voice', voiceName);
+                }
+            } else if (voiceName === 'default' || !voiceName) {
+                // Use default voice or continue without voice
+                const defaultVoice = availableVoices.find(v => v.lang.startsWith('en')) || availableVoices[0];
+                if (defaultVoice) {
+                    selectedVoice = defaultVoice;
+                    localStorage.setItem('tts_voice', defaultVoice.name);
+                }
+                // If no voices available, continue anyway (TTS will just not work)
+            }
 
             setupModal.style.display = 'none';
         });

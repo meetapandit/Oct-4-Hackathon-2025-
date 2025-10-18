@@ -280,6 +280,17 @@ def _repair_sentence_to_include_words(
 
     return _ensure_sentence_format(" ".join(original_words_in_order))
 
+
+def _deduplicate_sentences(sentences: List[str]) -> List[str]:
+    """Remove duplicate sentences while preserving the first occurrence."""
+    seen = set()
+    unique_sentences = []
+    for sentence in sentences:
+        if sentence not in seen:
+            unique_sentences.append(sentence)
+            seen.add(sentence)
+    return unique_sentences
+
 @app.route('/')
 def index():
     return render_template('index.html', base_path=BASE_PATH)
@@ -460,7 +471,7 @@ def generate_sentences():
         clean_words = [word.split(' ', 1)[-1] if ' ' in word else word for word in words]
         words_str = ", ".join(clean_words)
 
-        prompt = f"""Create 15-20 different short, simple sentences using these words: {words_str}
+        prompt = f"""Create 18-20 different short, simple sentences using these words: {words_str}
 
 CRITICAL RULES:
 - Use the words provided - preserve the user's intended meaning
@@ -479,7 +490,10 @@ CRITICAL RULES:
 - Keep words in their original order when possible - only reorder for grammar/clarity
 - Make the sentences grammatically correct and natural
 - Be simple and clear
+- Keep sentences concise (6-14 words) unless a slightly longer version is needed for clarity
 - Show different ways to express ideas while maintaining the core meaning
+- Ensure every sentence is UNIQUE — change structure, verb tense, or perspective to avoid duplicates or near-duplicates
+- Vary sentence tone when possible (statements, questions, polite requests, gentle commands)
 
 Examples showing part-of-speech flexibility:
 - "I bad want food" → "I badly want food" / "I want food badly" / "I really want food"
@@ -520,9 +534,11 @@ Return ONLY the sentences, one per line. No numbering, no extra text."""
             for sentence in sentences
         ]
 
+        deduplicated_sentences = _deduplicate_sentences(corrected_sentences)
+
         return jsonify({
             'success': True,
-            'sentences': corrected_sentences
+            'sentences': deduplicated_sentences
         })
 
     except Exception as e:

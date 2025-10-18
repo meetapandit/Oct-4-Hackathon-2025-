@@ -1,0 +1,449 @@
+[
+  {
+    "id": "TC001",
+    "title": "AI Vocabulary Generation with Text Input",
+    "description": "Verify that the system generates approximately 100 contextually relevant AAC vocabulary words with accurate emoji associations and proper category distribution when user inputs a text description.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Open the web app and enter a descriptive text context into the input field."
+      },
+      {
+        "type": "action",
+        "description": "Submit the context to trigger vocabulary generation."
+      },
+      {
+        "type": "assertion",
+        "description": "Check that around 100 vocabulary words are generated."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify that vocabulary words have correct associated emojis."
+      },
+      {
+        "type": "assertion",
+        "description": "Ensure vocabulary terms are distributed across expected categories (Action/Task, Tech/Tool, Problem/Error, etc)."
+      }
+    ]
+  },
+  {
+    "id": "TC002",
+    "title": "AI Vocabulary Generation with Image Upload",
+    "description": "Validate that uploading a supported image format generates relevant context description and vocabulary within 5-10 seconds, including emoji integration.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Open the web app and upload an image in JPEG format."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify image is accepted and processed."
+      },
+      {
+        "type": "assertion",
+        "description": "Check that a context description is generated within 5-10 seconds."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm approximately 100 vocabulary terms with emojis are presented based on image context."
+      }
+    ]
+  },
+  {
+    "id": "TC003",
+    "title": "Vocabulary Generation with Unsupported Image Format",
+    "description": "Ensure the system handles unsupported or corrupted image formats gracefully with clear error messages.",
+    "category": "error handling",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Attempt to upload an unsupported or corrupted image file."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify that the system rejects the image input."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm that an informative error message is displayed without service disruption."
+      }
+    ]
+  },
+  {
+    "id": "TC004",
+    "title": "Drag-and-Drop Sentence Construction on Desktop",
+    "description": "Verify smooth drag-and-drop interactions with mouse support for adding, reordering, and removing vocabulary words on the sentence canvas.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Open vocabulary list on desktop browser."
+      },
+      {
+        "type": "action",
+        "description": "Drag a vocabulary word onto the sentence canvas."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm the word appears on the canvas."
+      },
+      {
+        "type": "action",
+        "description": "Reorder words on the canvas by dragging."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify that words reorder correctly."
+      },
+      {
+        "type": "action",
+        "description": "Remove a word from the canvas via drag off or delete button."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm the word is removed from the canvas."
+      }
+    ]
+  },
+  {
+    "id": "TC005",
+    "title": "Drag-and-Drop Sentence Construction on Mobile/Tablet",
+    "description": "Ensure touch and long-press drag functionality works for adding, reordering, and removing vocabulary on mobile/tablet with iOS/iPad optimizations.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Open the app on a mobile or tablet device."
+      },
+      {
+        "type": "action",
+        "description": "Perform long-press on a vocabulary word and drag it to the sentence area."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the word is added to the canvas."
+      },
+      {
+        "type": "action",
+        "description": "Reorder words in the sentence using touch drag-and-drop."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm the order updates accordingly."
+      },
+      {
+        "type": "action",
+        "description": "Remove words from the sentence using touch gestures or delete controls."
+      },
+      {
+        "type": "assertion",
+        "description": "Ensure the word is removed successfully."
+      }
+    ]
+  },
+  {
+    "id": "TC006",
+    "title": "Custom Word Input into Sentence Canvas",
+    "description": "Validate that users can type custom words not in the generated vocabulary directly into the canvas and these words can participate in sentence generation.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Activate the input field on the sentence canvas."
+      },
+      {
+        "type": "action",
+        "description": "Type a custom word not contained in the vocabulary list."
+      },
+      {
+        "type": "action",
+        "description": "Add the custom word to the sentence."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm custom word appears on the canvas."
+      },
+      {
+        "type": "action",
+        "description": "Request sentence generation based on selected words including the custom word."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify generated sentences include the custom word appropriately."
+      }
+    ]
+  },
+  {
+    "id": "TC007",
+    "title": "Next Word Prediction API Functionality",
+    "description": "Verify that next word prediction suggests up to 15 contextual next words with emojis dynamically within 1-2 seconds latency based on current sentence context.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Construct a partial sentence on the canvas."
+      },
+      {
+        "type": "action",
+        "description": "Observe the next word suggestions panel."
+      },
+      {
+        "type": "assertion",
+        "description": "Check that up to 15 contextually relevant suggested words with emojis are displayed."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the suggestions update dynamically within 2 seconds of sentence changes."
+      }
+    ]
+  },
+  {
+    "id": "TC008",
+    "title": "Sentence Generation with Selected Words",
+    "description": "Ensure the sentence generation module produces 15-20 grammatically correct variations preserving core meaning from user-selected vocabulary words.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Select a set of vocabulary words on the canvas."
+      },
+      {
+        "type": "action",
+        "description": "Request sentence generation."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify that 15 to 20 sentence variations are generated."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm sentences are grammatically correct and preserve the core meaning of selected words."
+      }
+    ]
+  },
+  {
+    "id": "TC009",
+    "title": "Text-to-Speech Playback for Words and Sentences",
+    "description": "Validate that clicking words, suggestions, or sentences triggers immediate text-to-speech playback with user-selectable voice preferences.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Select a vocabulary word and click its speech icon."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm the word is read aloud instantly using Web Speech API."
+      },
+      {
+        "type": "action",
+        "description": "Click on a generated sentence to play full sentence speech."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the full sentence is read aloud immediately."
+      },
+      {
+        "type": "action",
+        "description": "Change voice preferences in settings and repeat playback."
+      },
+      {
+        "type": "assertion",
+        "description": "Validate the speech output uses the updated voice settings."
+      }
+    ]
+  },
+  {
+    "id": "TC010",
+    "title": "Search and Filter Vocabulary Terms",
+    "description": "Check that search and filter functions respond in real-time, filtering vocabulary terms and categories with expandable/collapsible behavior.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Enter a search string into the vocabulary search field."
+      },
+      {
+        "type": "assertion",
+        "description": "Ensure vocabulary list filters dynamically to matching terms."
+      },
+      {
+        "type": "action",
+        "description": "Use category filters or expand/collapse categories."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify categories expand or collapse accordingly and words are filtered properly."
+      }
+    ]
+  },
+  {
+    "id": "TC011",
+    "title": "Settings Panel Configuration and Persistence",
+    "description": "Verify that user inputs in the settings panel (API key, dark mode toggle, font size, high contrast mode) are validated, applied immediately, and persisted in local storage.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Open settings panel and enter a valid OpenAI API key."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm API key is validated and accepted."
+      },
+      {
+        "type": "action",
+        "description": "Toggle dark mode and high contrast mode."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify UI updates reflect chosen themes immediately."
+      },
+      {
+        "type": "action",
+        "description": "Adjust font size settings."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm font size changes are applied instantly."
+      },
+      {
+        "type": "action",
+        "description": "Reload the app and open settings again."
+      },
+      {
+        "type": "assertion",
+        "description": "Check that all previously selected settings persist from local storage."
+      }
+    ]
+  },
+  {
+    "id": "TC012",
+    "title": "API Key Validation Error Handling",
+    "description": "Ensure that invalid or missing OpenAI API keys trigger clear error messages without disrupting core app functionality.",
+    "category": "error handling",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Enter an invalid API key in the settings panel and submit."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify that a descriptive error message about invalid API key is displayed."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm the app continues functioning with limited or default features."
+      }
+    ]
+  },
+  {
+    "id": "TC013",
+    "title": "Rate Limiting Behavior with API Key",
+    "description": "Validate system behavior when API rate limit (20 requests per 5 minutes) is reached for a given API key, including error messaging and service continuity.",
+    "category": "error handling",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Simulate sending 21+ requests with the same API key within 5 minutes."
+      },
+      {
+        "type": "assertion",
+        "description": "Check that the 21st and subsequent requests return a rate limiting error."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify error messages clearly indicate rate limiting without crashing the app."
+      }
+    ]
+  },
+  {
+    "id": "TC014",
+    "title": "Accessibility Compliance Verification",
+    "description": "Verify all interactive elements comply with WCAG 2.1 AA standards including keyboard navigation, screen reader compatibility, touch target sizing, and color contrast.",
+    "category": "ui",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate the app using keyboard only."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm all interactive controls are reachable and operable."
+      },
+      {
+        "type": "action",
+        "description": "Use a screen reader and test app navigation and element labeling."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify all UI elements have appropriate ARIA labels and roles."
+      },
+      {
+        "type": "assertion",
+        "description": "Check that touch targets meet minimum size requirements."
+      },
+      {
+        "type": "assertion",
+        "description": "Validate UI color contrast ratios meet WCAG 2.1 AA standards in all themes."
+      }
+    ]
+  },
+  {
+    "id": "TC015",
+    "title": "Performance Testing of Core Functionalities",
+    "description": "Test performance targets to ensure vocabulary generation occurs within 15-30 seconds, image analysis within 5-10 seconds, sentence generation in 3-5 seconds, and speech playback is instantaneous.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Trigger vocabulary generation from text input and measure response time."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm vocabulary generation completes within 30 seconds."
+      },
+      {
+        "type": "action",
+        "description": "Upload an image and record image context analysis duration."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify image analysis is completed within 10 seconds."
+      },
+      {
+        "type": "action",
+        "description": "Request generation of sentence variations and time the completion."
+      },
+      {
+        "type": "assertion",
+        "description": "Ensure sentence generation finishes within 5 seconds."
+      },
+      {
+        "type": "action",
+        "description": "Activate text-to-speech on a word and on a sentence and measure latency."
+      },
+      {
+        "type": "assertion",
+        "description": "Validate speech playback starts instantaneously."
+      }
+    ]
+  }
+]
