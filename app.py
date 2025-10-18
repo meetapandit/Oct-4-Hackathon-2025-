@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 from flask import Flask, render_template, request, jsonify
 from flask_cors import CORS
 from openai import OpenAI
@@ -12,6 +13,13 @@ import hashlib
 from typing import Tuple, Dict, List
 import re
 from werkzeug.middleware.proxy_fix import ProxyFix
+from dotenv import load_dotenv
+import logging
+
+# Load .env files for local development without overriding deployed env vars.
+project_dir = Path(__file__).resolve().parent
+load_dotenv(project_dir / ".env")
+load_dotenv(project_dir.parent / ".env")
 
 app = Flask(__name__)
 CORS(app)
@@ -29,6 +37,66 @@ rate_limit_store = defaultdict(list)
 RATE_LIMIT_REQUESTS = 20  # Max requests per window
 RATE_LIMIT_WINDOW = 300  # 5 minutes in seconds
 RATE_LIMIT_ENABLED = False  # Disabled per request; set True to restore limiting
+FUNCTION_WORDS = {
+    "a", "an", "the", "to", "of", "and", "or", "but", "so", "for", "nor", "yet",
+    "in", "on", "at", "by", "with", "from", "into", "onto", "over", "under",
+    "is", "am", "are", "was", "were", "be", "being", "been",
+    "do", "does", "did",
+    "have", "has", "had",
+    "can", "could", "will", "would", "shall", "should", "may", "might", "must",
+    "that", "this", "these", "those",
+    "as", "if", "than", "because", "while", "when", "where", "how", "why",
+    "not", "no", "yes", "please", "thanks",
+    "too", "very", "really", "also", "just", "still"
+}
+ALLOWED_SUFFIXES = ("s", "es", "ed", "ing", "er", "ers", "ly", "d")
+
+PRONOUN_GROUPS = [
+    {"i", "me", "my", "mine"},
+    {"you", "your", "yours"},
+    {"he", "him", "his"},
+    {"she", "her", "hers"},
+    {"it", "its"},
+    {"we", "us", "our", "ours"},
+    {"they", "them", "their", "theirs"},
+    {"myself", "yourself", "himself", "herself", "itself", "ourselves", "yourselves", "themselves"}
+]
+
+PRONOUN_VARIANTS: Dict[str, set] = {}
+for group in PRONOUN_GROUPS:
+    normalized_group = {word.lower() for word in group}
+    for word in normalized_group:
+        PRONOUN_VARIANTS[word] = normalized_group
+
+try:
+    from nltk.corpus import wordnet as _WORDNET
+except Exception:
+    _WORDNET = None
+
+if os.environ.get("AAC_DISABLE_SPACY"):
+    logging.info("spaCy disabled via AAC_DISABLE_SPACY; using simple normalization only.")
+    _NLP = None
+else:
+    try:
+        import spacy
+        _NLP = spacy.load("en_core_web_sm", disable=["ner", "parser", "textcat"])
+    except Exception as e:
+        logging.warning("spaCy model not available (%s). Falling back to simple normalization.", e)
+        _NLP = None
+
+
+def _lemmatize_word(word: str) -> str:
+    normalized = _normalize_word(word)
+    if not normalized or _NLP is None:
+        return normalized
+
+    doc = _NLP(normalized)
+    if not doc:
+        return normalized
+    lemma = doc[0].lemma_.lower()
+    if lemma == "-pron-":
+        return normalized
+    return _normalize_word(lemma)
 
 def get_openai_client(api_key: str):
     """Create OpenAI client with provided API key"""
@@ -80,6 +148,98 @@ def _sentence_tokens(sentence: str) -> set:
     }
 
 
+def _sentence_token_sequence(sentence: str) -> List[str]:
+    """Return normalized tokens preserving order and duplicates."""
+    return [
+        token
+        for token in (_normalize_word(tok) for tok in re.findall(r"[A-Za-z0-9']+", sentence))
+        if token
+    ]
+
+
+def _same_pronoun_family(token: str, required_token: str) -> bool:
+    return token in PRONOUN_VARIANTS and required_token in PRONOUN_VARIANTS and \
+        PRONOUN_VARIANTS[token] is PRONOUN_VARIANTS[required_token]
+
+
+def _token_matches_required(token: str, required_token: str, required_lemma: str) -> bool:
+    """Allow small grammatical adjustments, including synonyms when available."""
+    if token == required_token:
+        return True
+
+    # possessive variants
+    if token.endswith("s") and token[:-1] == required_token:
+        return True
+    if token.endswith("'s") and token[:-2] == required_token:
+        return True
+
+    # simple suffix-based inflections
+    for suffix in ALLOWED_SUFFIXES:
+        if token == required_token + suffix:
+            return True
+
+    if required_token.endswith("y") and token == required_token[:-1] + "ies":
+        return True
+
+    token_lemma = _lemmatize_word(token)
+    if token_lemma == required_lemma:
+        return True
+
+    if _same_pronoun_family(token, required_token):
+        return True
+
+    if _WORDNET is not None:
+        try:
+            token_syns = {
+                _normalize_word(lemma.name())
+                for syn in _WORDNET.synsets(token)
+                for lemma in syn.lemmas()
+            }
+            required_syns = {
+                _normalize_word(lemma.name())
+                for syn in _WORDNET.synsets(required_token)
+                for lemma in syn.lemmas()
+            }
+            if not required_syns and required_lemma:
+                required_syns = {
+                    _normalize_word(lemma.name())
+                    for syn in _WORDNET.synsets(required_lemma)
+                    for lemma in syn.lemmas()
+                }
+            if required_syns & token_syns:
+                return True
+        except Exception:
+            pass
+
+    return False
+
+
+def _tokens_cover_required(
+    sentence_tokens: List[str],
+    required_tokens: List[str],
+    required_lemmas: List[str],
+) -> bool:
+    """Ensure every required token (or allowable variant) appears somewhere in the sentence."""
+    if not required_tokens:
+        return True
+
+    used = [False] * len(sentence_tokens)
+    for req_token, req_lemma in zip(required_tokens, required_lemmas):
+        matched = False
+        for idx, token in enumerate(sentence_tokens):
+            if used[idx]:
+                continue
+            if token in FUNCTION_WORDS:
+                continue
+            if _token_matches_required(token, req_token, req_lemma):
+                used[idx] = True
+                matched = True
+                break
+        if not matched:
+            return False
+    return True
+
+
 def _ensure_sentence_format(sentence: str) -> str:
     """Trim, capitalise first alpha character, and ensure terminal punctuation."""
     s = sentence.strip()
@@ -103,32 +263,22 @@ def _repair_sentence_to_include_words(
     sentence: str,
     clean_words: List[str],
     required_tokens: List[str],
-    token_to_word: Dict[str, str],
+    required_lemmas: List[str],
+    original_words_in_order: List[str],
 ) -> str:
     """
-    Ensure the sentence contains each required token.
-    If tokens are missing, append the original words at the end before final formatting.
+    Validate that a sentence keeps the supplied tokens (with any allowable variant).
+    If validation fails, fall back to a deterministic reconstruction of the original words.
     """
     if not required_tokens:
         return _ensure_sentence_format(sentence or " ".join(clean_words))
 
-    present_tokens = _sentence_tokens(sentence)
-    missing = [tok for tok in required_tokens if tok not in present_tokens]
+    token_sequence = _sentence_token_sequence(sentence)
 
-    if not missing:
+    if token_sequence and _tokens_cover_required(token_sequence, required_tokens, required_lemmas):
         return _ensure_sentence_format(sentence)
 
-    base_sentence = sentence.strip()
-    if base_sentence.endswith((".", "!", "?")):
-        base_sentence = base_sentence.rstrip(".!? ")
-
-    if not base_sentence:
-        base_sentence = " ".join(token_to_word[tok] for tok in required_tokens)
-    else:
-        missing_words = [token_to_word[tok] for tok in missing]
-        base_sentence = f"{base_sentence} {' '.join(missing_words)}"
-
-    return _ensure_sentence_format(base_sentence)
+    return _ensure_sentence_format(" ".join(original_words_in_order))
 
 @app.route('/')
 def index():
@@ -349,16 +499,24 @@ Return ONLY the sentences, one per line. No numbering, no extra text."""
         sentences = [s.strip() for s in response_text.split('\n') if s.strip()]
 
         # Ensure sentences preserve the supplied words as closely as possible
-        token_to_word = {}
-        required_tokens = []
+        required_tokens: List[str] = []
+        required_lemmas: List[str] = []
+        original_words_in_order: List[str] = []
         for original_word in clean_words:
             normalized = _normalize_word(original_word)
-            if normalized and normalized not in token_to_word:
-                token_to_word[normalized] = original_word
+            if normalized:
                 required_tokens.append(normalized)
+                required_lemmas.append(_lemmatize_word(original_word))
+                original_words_in_order.append(original_word)
 
         corrected_sentences = [
-            _repair_sentence_to_include_words(sentence, clean_words, required_tokens, token_to_word)
+            _repair_sentence_to_include_words(
+                sentence,
+                clean_words,
+                required_tokens,
+                required_lemmas,
+                original_words_in_order
+            )
             for sentence in sentences
         ]
 
