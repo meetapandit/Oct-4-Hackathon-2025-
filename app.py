@@ -562,8 +562,125 @@ Return ONLY the sentences, one per line. No numbering, no extra text."""
 
         return jsonify({
             'success': True,
-            'sentences': deduplicated_sentences
+            'sentences': deduplicated_sentences,
+            'attempts': attempt + 1,
+            'total_generated': len(all_valid_sentences)
         })
+
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/generate-sentences-stream', methods=['POST'])
+def generate_sentences_stream():
+    """Streaming version that sends sentences as they're generated"""
+    try:
+        from flask import Response, stream_with_context
+        import json as json_module
+
+        data = request.json
+        words = data.get('words', [])
+        user_api_key = data.get('api_key', '')
+
+        if not words:
+            return jsonify({'error': 'Words are required'}), 400
+
+        # Use server API key if available
+        server_api_key = os.environ.get('OPENAI_API_KEY', '')
+        api_key = server_api_key if server_api_key else user_api_key
+
+        if not api_key:
+            return jsonify({'error': 'API key is required'}), 400
+
+        # Check rate limit
+        rate_limit_key = 'SERVER_KEY' if server_api_key else api_key
+        is_allowed, error_msg = check_rate_limit(rate_limit_key)
+        if not is_allowed:
+            return jsonify({'error': error_msg}), 429
+
+        openai_client = get_openai_client(api_key)
+        clean_words = [word.split(' ', 1)[-1] if ' ' in word else word for word in words]
+        words_str = ", ".join(clean_words)
+
+        prompt = f"""Create 18-20 different short, simple sentences using these words: {words_str}
+
+CRITICAL RULES:
+- Use the words provided - preserve the user's intended meaning
+- KEEP THE CORE MESSAGE INTACT - the user chose these words to express something specific
+- You may add function words (the, a, an, is, are, was, were, to, at, in, on, with, while, etc.)
+- You may conjugate verbs as necessary (add -s, -ed, -ing)
+- You may add plural markers (-s, -es)
+- You may change pronoun case (I/me, he/him, she/her, they/them, etc.)
+- You may CHANGE PARTS OF SPEECH to make sentences grammatical (noun→verb, adjective→adverb, etc.)
+- Keep words in their original order when possible - only reorder for grammar/clarity
+- Make the sentences grammatically correct and natural
+- Be simple and clear
+- Keep sentences concise (6-14 words) unless a slightly longer version is needed for clarity
+- Show different ways to express ideas while maintaining the core meaning
+- Ensure every sentence is UNIQUE — change structure, verb tense, or perspective to avoid duplicates or near-duplicates
+- Vary sentence tone when possible (statements, questions, polite requests, gentle commands)
+
+Return ONLY the sentences, one per line. No numbering, no extra text."""
+
+        # Prepare validation data
+        required_tokens: List[str] = []
+        required_lemmas: List[str] = []
+        original_words_in_order: List[str] = []
+        for original_word in clean_words:
+            normalized = _normalize_word(original_word)
+            if normalized:
+                required_tokens.append(normalized)
+                required_lemmas.append(_lemmatize_word(original_word))
+                original_words_in_order.append(original_word)
+
+        def generate():
+            all_valid_sentences = []
+            max_attempts = 5
+            target_sentences = 15
+
+            for attempt in range(max_attempts):
+                try:
+                    response = openai_client.chat.completions.create(
+                        model="gpt-4o-mini",
+                        max_tokens=2500,
+                        messages=[{"role": "user", "content": prompt}]
+                    )
+
+                    response_text = response.choices[0].message.content.strip()
+                    sentences = [s.strip() for s in response_text.split('\n') if s.strip()]
+
+                    corrected_sentences = [
+                        _repair_sentence_to_include_words(
+                            sentence,
+                            clean_words,
+                            required_tokens,
+                            required_lemmas,
+                            original_words_in_order
+                        )
+                        for sentence in sentences
+                    ]
+
+                    # Add new unique sentences
+                    prev_count = len(all_valid_sentences)
+                    all_valid_sentences.extend(corrected_sentences)
+                    all_valid_sentences = _deduplicate_sentences(all_valid_sentences)
+                    new_count = len(all_valid_sentences) - prev_count
+
+                    # Stream the new sentences
+                    yield f"data: {json_module.dumps({'type': 'sentences', 'sentences': all_valid_sentences, 'new_count': new_count, 'total': len(all_valid_sentences), 'attempt': attempt + 1})}\n\n"
+
+                    if len(all_valid_sentences) >= target_sentences:
+                        yield f"data: {json_module.dumps({'type': 'complete', 'sentences': all_valid_sentences, 'total': len(all_valid_sentences)})}\n\n"
+                        break
+
+                except Exception as e:
+                    yield f"data: {json_module.dumps({'type': 'error', 'error': str(e), 'attempt': attempt + 1})}\n\n"
+                    if attempt == max_attempts - 1:
+                        break
+
+        return Response(stream_with_context(generate()), mimetype='text/event-stream')
 
     except Exception as e:
         return jsonify({
