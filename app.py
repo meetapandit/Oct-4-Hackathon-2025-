@@ -503,15 +503,6 @@ Examples showing part-of-speech flexibility:
 
 Return ONLY the sentences, one per line. No numbering, no extra text."""
 
-        response = openai_client.chat.completions.create(
-            model="gpt-4o-mini",
-            max_tokens=2500,
-            messages=[{"role": "user", "content": prompt}]
-        )
-
-        response_text = response.choices[0].message.content.strip()
-        sentences = [s.strip() for s in response_text.split('\n') if s.strip()]
-
         # Ensure sentences preserve the supplied words as closely as possible
         required_tokens: List[str] = []
         required_lemmas: List[str] = []
@@ -523,18 +514,51 @@ Return ONLY the sentences, one per line. No numbering, no extra text."""
                 required_lemmas.append(_lemmatize_word(original_word))
                 original_words_in_order.append(original_word)
 
-        corrected_sentences = [
-            _repair_sentence_to_include_words(
-                sentence,
-                clean_words,
-                required_tokens,
-                required_lemmas,
-                original_words_in_order
-            )
-            for sentence in sentences
-        ]
+        # Retry logic: try up to 5 times to get at least 15 valid sentences
+        all_valid_sentences = []
+        max_attempts = 5
+        target_sentences = 15
 
-        deduplicated_sentences = _deduplicate_sentences(corrected_sentences)
+        for attempt in range(max_attempts):
+            try:
+                response = openai_client.chat.completions.create(
+                    model="gpt-4o-mini",
+                    max_tokens=2500,
+                    messages=[{"role": "user", "content": prompt}]
+                )
+
+                response_text = response.choices[0].message.content.strip()
+                sentences = [s.strip() for s in response_text.split('\n') if s.strip()]
+
+                # Correct and validate sentences
+                corrected_sentences = [
+                    _repair_sentence_to_include_words(
+                        sentence,
+                        clean_words,
+                        required_tokens,
+                        required_lemmas,
+                        original_words_in_order
+                    )
+                    for sentence in sentences
+                ]
+
+                # Add to accumulated list and deduplicate
+                all_valid_sentences.extend(corrected_sentences)
+                all_valid_sentences = _deduplicate_sentences(all_valid_sentences)
+
+                # Check if we have enough valid sentences
+                if len(all_valid_sentences) >= target_sentences:
+                    break
+
+                # If not enough, continue to next attempt
+                print(f"Attempt {attempt + 1}: Got {len(all_valid_sentences)} sentences, need {target_sentences}")
+
+            except Exception as e:
+                print(f"Attempt {attempt + 1} failed: {e}")
+                if attempt == max_attempts - 1:
+                    raise
+
+        deduplicated_sentences = all_valid_sentences
 
         return jsonify({
             'success': True,
