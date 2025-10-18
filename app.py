@@ -9,7 +9,8 @@ import io
 from collections import defaultdict
 from datetime import datetime, timedelta
 import hashlib
-from typing import Tuple
+from typing import Tuple, Dict, List
+import re
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 app = Flask(__name__)
@@ -63,6 +64,71 @@ def check_rate_limit(api_key: str) -> Tuple[bool, str]:
     # Add current request
     rate_limit_store[key_hash].append(now)
     return True, ""
+
+
+def _normalize_word(word: str) -> str:
+    """Lowercase token stripped of punctuation for comparison."""
+    return re.sub(r"[^a-z0-9']", "", word.lower())
+
+
+def _sentence_tokens(sentence: str) -> set:
+    """Return normalized tokens contained in a sentence."""
+    return {
+        token
+        for token in (_normalize_word(tok) for tok in re.findall(r"[A-Za-z0-9']+", sentence))
+        if token
+    }
+
+
+def _ensure_sentence_format(sentence: str) -> str:
+    """Trim, capitalise first alpha character, and ensure terminal punctuation."""
+    s = sentence.strip()
+    if not s:
+        return s
+
+    # Capitalise first alphabetical character without disturbing leading emoji/punctuation
+    chars = list(s)
+    for idx, ch in enumerate(chars):
+        if ch.isalpha():
+            chars[idx] = ch.upper()
+            break
+    s = "".join(chars)
+
+    if s[-1] not in ".!?":
+        s += "."
+    return s
+
+
+def _repair_sentence_to_include_words(
+    sentence: str,
+    clean_words: List[str],
+    required_tokens: List[str],
+    token_to_word: Dict[str, str],
+) -> str:
+    """
+    Ensure the sentence contains each required token.
+    If tokens are missing, append the original words at the end before final formatting.
+    """
+    if not required_tokens:
+        return _ensure_sentence_format(sentence or " ".join(clean_words))
+
+    present_tokens = _sentence_tokens(sentence)
+    missing = [tok for tok in required_tokens if tok not in present_tokens]
+
+    if not missing:
+        return _ensure_sentence_format(sentence)
+
+    base_sentence = sentence.strip()
+    if base_sentence.endswith((".", "!", "?")):
+        base_sentence = base_sentence.rstrip(".!? ")
+
+    if not base_sentence:
+        base_sentence = " ".join(token_to_word[tok] for tok in required_tokens)
+    else:
+        missing_words = [token_to_word[tok] for tok in missing]
+        base_sentence = f"{base_sentence} {' '.join(missing_words)}"
+
+    return _ensure_sentence_format(base_sentence)
 
 @app.route('/')
 def index():
@@ -282,9 +348,23 @@ Return ONLY the sentences, one per line. No numbering, no extra text."""
         response_text = response.choices[0].message.content.strip()
         sentences = [s.strip() for s in response_text.split('\n') if s.strip()]
 
+        # Ensure sentences preserve the supplied words as closely as possible
+        token_to_word = {}
+        required_tokens = []
+        for original_word in clean_words:
+            normalized = _normalize_word(original_word)
+            if normalized and normalized not in token_to_word:
+                token_to_word[normalized] = original_word
+                required_tokens.append(normalized)
+
+        corrected_sentences = [
+            _repair_sentence_to_include_words(sentence, clean_words, required_tokens, token_to_word)
+            for sentence in sentences
+        ]
+
         return jsonify({
             'success': True,
-            'sentences': sentences
+            'sentences': corrected_sentences
         })
 
     except Exception as e:
